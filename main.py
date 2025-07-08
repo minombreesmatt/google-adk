@@ -1,10 +1,11 @@
 import os
+import google.genai as genai
 import asyncio
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
-from google.genai import types
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -48,3 +49,50 @@ print(transcribe_audio("test_audio.wav"))
 print("Después de transcribir")
 # Example usage:
 # print(transcribe_audio("test_audio.wav"))
+
+import json
+import re
+
+import google.genai as genai
+import json
+import re
+
+def parsear_con_gemini(texto: str) -> dict:
+    prompt = f"""
+Analiza el siguiente texto. Si es un pedido de cliente, devuelve un JSON con los campos:
+tipo: "orden", cliente, items: [{{producto, cantidad, unidad}}].
+Si es un ingreso de mercadería, devuelve:
+tipo: "ingreso", proveedor, items: [{{producto, cantidad, unidad}}].
+Si no entiende, devuelve tipo: "desconocido".
+Texto: '{texto}'
+Solo responde con el JSON, sin explicaciones.
+"""
+    
+    try:
+        import litellm
+        
+        # Usar LiteLLM para llamar a Gemini
+        response = litellm.completion(
+            model="gemini/gemini-1.5-flash",
+            messages=[{"role": "user", "content": prompt}],
+            api_key=os.getenv("GOOGLE_API_KEY")
+        )
+        
+        # Extraer el texto de la respuesta
+        response_text = response.choices[0].message.content.strip()
+        
+        # Buscar JSON en la respuesta
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        else:
+            return {"tipo": "error", "error": "No se encontró JSON", "raw": response_text}
+            
+    except Exception as e:
+        return {"tipo": "error", "error": str(e)}
+
+texto_ejemplo = "Quiero 10 kilos de tomate y 5 de papa para el restaurante La Esquina"
+print("Parseo Gemini:", parsear_con_gemini(texto_ejemplo))
+
+texto_ejemplo = "Quiero 10 kilos de tomate y 5 de papa para el restaurante La Esquina"
+print("Parseo Gemini:", parsear_con_gemini(texto_ejemplo))
