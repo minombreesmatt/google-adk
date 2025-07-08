@@ -44,9 +44,7 @@ def transcribe_audio(audio_path: str) -> str:
         print("Error en transcripción:", e)
         return ""
 
-print("Antes de transcribir")
-print(transcribe_audio("test_audio.wav"))
-print("Después de transcribir")
+# Esta parte se movió abajo para evitar duplicación
 # Example usage:
 # print(transcribe_audio("test_audio.wav"))
 
@@ -91,8 +89,6 @@ Solo responde con el JSON, sin explicaciones.
     except Exception as e:
         return {"tipo": "error", "error": str(e)}
 
-texto_ejemplo = "Quiero 10 kilos de tomate y 5 de papa para el restaurante La Esquina"
-print("Parseo Gemini:", parsear_con_gemini(texto_ejemplo))
-
-texto_ejemplo = "Quiero 10 kilos de tomate y 5 de papa para el restaurante La Esquina"
-print("Parseo Gemini:", parsear_con_gemini(texto_ejemplo))
+# Usar el texto real transcripto
+texto_transcripto = transcribe_audio("test_audio.wav")
+print("Parseo Gemini:", parsear_con_gemini(texto_transcripto))
