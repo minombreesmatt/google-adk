@@ -49,7 +49,7 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac"}
+ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".flac", ".webm"}
 REQUEST_TIMEOUT = 30  # 30 segundos
 
 # Estado global para métricas

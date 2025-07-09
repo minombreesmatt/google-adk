@@ -37,8 +37,8 @@ def transcribe_audio(audio_path: str) -> str:
 
     audio = speech.RecognitionAudio(content=content)
     config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=16000,
+        encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,
+        # sample_rate_hertz=16000,
         language_code="es-ES",
     )
 
@@ -123,8 +123,8 @@ def transcribe_audio_tool(audio_path: str) -> str:
 
         audio = speech.RecognitionAudio(content=content)
         config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=16000,
+            encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,
+            # sample_rate_hertz=16000,
             language_code="es-ES",
         )
 
