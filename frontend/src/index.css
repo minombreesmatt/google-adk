@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+.animate-loading-bar {
+  animation: loading-bar 1.2s cubic-bezier(0.4,0,0.2,1) infinite;
+  width: 40%;
+}
+.shadow-neomorph {
+  box-shadow: 8px 8px 24px #b6b6b6, -8px -8px 24px #ffffff;
+  transition: box-shadow 0.2s;
+}
+.shadow-neomorph:active {
+  box-shadow: 2px 2px 8px #b6b6b6, -2px -2px 8px #ffffff;
+}
