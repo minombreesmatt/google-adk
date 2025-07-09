@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Mic, MicOff, X, Send, Check, Loader2, Volume2, 
-  Package, ShoppingCart, AlertCircle, ChevronRight
+  Package, ShoppingCart, AlertCircle, ChevronRight,
+  Users, BarChart3, Plus, Edit, Trash2, Search, Calendar,
+  TrendingUp, DollarSign, Clock, User
 } from 'lucide-react';
 
 export default function TiboAIAssistant() {
+  // Estados existentes
   const [isListening, setIsListening] = useState(false);
   const [inputText, setInputText] = useState('');
   const [conversation, setConversation] = useState([]);
@@ -20,8 +23,459 @@ export default function TiboAIAssistant() {
   const [audioChunks, setAudioChunks] = useState([]);
   const [isRecordingSupported, setIsRecordingSupported] = useState(true);
 
+  // Nuevo estado para navegación
+  const [activeTab, setActiveTab] = useState('tibo');
+
+  // Estados para las nuevas secciones
+  const [pedidos, setPedidos] = useState([
+    {
+      id: 1,
+      fecha: '2025-01-27',
+      cliente: 'Juan Carlos',
+      productos: [
+        { producto: 'Tomates almita', cantidad: 20, precio: 5500 }
+      ],
+      total: 110000,
+      estado: 'completado'
+    },
+    {
+      id: 2,
+      fecha: '2025-01-27',
+      cliente: 'María López',
+      productos: [
+        { producto: 'Papas', cantidad: 15, precio: 3200 },
+        { producto: 'Cebollas', cantidad: 10, precio: 2800 }
+      ],
+      total: 76000,
+      estado: 'pendiente'
+    }
+  ]);
+
+  const [inventario, setInventario] = useState([
+    { id: 1, producto: 'Tomates almita', stock: 50, precio: 5500, categoria: 'Verduras' },
+    { id: 2, producto: 'Papas', stock: 30, precio: 3200, categoria: 'Verduras' },
+    { id: 3, producto: 'Cebollas', stock: 25, precio: 2800, categoria: 'Verduras' },
+    { id: 4, producto: 'Manzanas', stock: 40, precio: 4200, categoria: 'Frutas' }
+  ]);
+
+  const [clientes, setClientes] = useState([
+    { id: 1, nombre: 'Juan Carlos', telefono: '11-1234-5678', ultimaCompra: '2025-01-27', totalCompras: 5 },
+    { id: 2, nombre: 'María López', telefono: '11-8765-4321', ultimaCompra: '2025-01-27', totalCompras: 8 },
+    { id: 3, nombre: 'Carlos Mendez', telefono: '11-5555-1234', ultimaCompra: '2025-01-26', totalCompras: 3 }
+  ]);
+
   // API Configuration
   const API_BASE_URL = 'http://localhost:8000';
+
+  // Componentes para cada sección
+  const TiboScreen = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-green-500 text-white p-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+              <Mic size={16} className="text-green-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold">Tibo AI</h1>
+              <p className="text-sm text-green-100">Tu asistente de pedidos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Conversation */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {conversation.map((message, index) => (
+          <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {/* User message */}
+            {message.type === 'user' && (
+              <div className="bg-blue-500 text-white p-3 rounded-2xl max-w-xs">
+                <p className="text-sm">{message.content}</p>
+              </div>
+            )}
+            
+            {/* AI message */}
+            {message.type === 'ai' && (
+              <div className="bg-white rounded-2xl p-3 shadow-sm max-w-xs">
+                <p className="text-sm text-gray-800">{message.content}</p>
+                
+                {/* Action card */}
+                {message.action && (
+                  <button
+                    onClick={() => handleEditAction(message.action)}
+                    className="w-full mt-3 p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        {message.action.type === 'nueva_venta' ? (
+                          <ShoppingCart size={16} className="text-green-600" />
+                        ) : (
+                          <Package size={16} className="text-green-600" />
+                        )}
+                        <span className="text-sm font-medium text-green-800">
+                          {message.action.type === 'nueva_venta' ? 'Nueva Venta' : 'Ingresar Mercadería'}
+                        </span>
+                      </div>
+                      <ChevronRight size={16} className="text-green-600" />
+                    </div>
+                    
+                    {message.action.type === 'nueva_venta' && (
+                      <div className="text-sm text-gray-600">
+                        {message.action.data.productos.map((p, i) => (
+                          <div key={i}>{p.cantidad}x {p.producto}</div>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+            
+            {/* System messages */}
+            {message.type === 'system' && (
+              <div className="text-center">
+                <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
+                  {message.content}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {isProcessing && (
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center space-x-2">
+              <Loader2 size={16} className="animate-spin text-green-500" />
+              <span className="text-gray-600">El robot está pensando...</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Executing State */}
+      {isExecuting && (
+        <div className="p-3 bg-green-50 border-t border-green-200">
+          <div className="flex items-center justify-center space-x-2">
+            <Loader2 size={16} className="animate-spin text-green-500" />
+            <span className="text-sm text-green-700">Ejecutando...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Controles */}
+      <div className="p-4 bg-white border-t border-gray-200">
+        {/* Input de texto */}
+        {showTextInput && (
+          <div className="mb-3 flex items-center space-x-2">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              placeholder="Escribí tu mensaje..."
+              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              disabled={isProcessing || isExecuting}
+              autoFocus
+            />
+            <button
+              onClick={() => handleSendMessage()}
+              disabled={!inputText.trim() || isProcessing || isExecuting}
+              className="p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        )}
+        
+        {/* Botones principales */}
+        <div className="flex items-center justify-center space-x-4">
+          <button
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            onMouseLeave={stopRecording}
+            disabled={isProcessing || isExecuting || !isRecordingSupported}
+            className={`w-16 h-16 rounded-full transition-all duration-200 flex items-center justify-center ${
+              isListening 
+                ? 'bg-red-500 text-white scale-110' 
+                : 'bg-green-500 text-white hover:bg-green-600 shadow-lg'
+            } disabled:opacity-50`}
+            title={!isRecordingSupported ? 'Grabación de audio no soportada' : 'Mantené presionado para grabar'}
+          >
+            {isListening ? (
+              <div className="relative">
+                <MicOff size={28} />
+                <div className="absolute inset-0 animate-pulse bg-red-300 rounded-full opacity-50"></div>
+              </div>
+            ) : (
+              <Mic size={28} />
+            )}
+          </button>
+
+          <button
+            onClick={() => setShowTextInput(!showTextInput)}
+            disabled={isProcessing || isExecuting}
+            className={`px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+              showTextInput 
+                ? 'bg-green-500 text-white border-green-500' 
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Chat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const PedidosScreen = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-800">Pedidos</h1>
+          <div className="flex items-center space-x-2">
+            <button className="p-2 text-gray-600 hover:text-gray-800">
+              <Search size={20} />
+            </button>
+            <button className="p-2 text-gray-600 hover:text-gray-800">
+              <Calendar size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de pedidos */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {pedidos.map((pedido) => (
+          <div key={pedido.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h3 className="font-semibold text-gray-800">{pedido.cliente}</h3>
+                <p className="text-sm text-gray-600">{pedido.fecha}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-green-600">${pedido.total.toLocaleString()}</p>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  pedido.estado === 'completado' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {pedido.estado}
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              {pedido.productos.map((producto, index) => (
+                <div key={index} className="flex justify-between text-sm text-gray-600">
+                  <span>{producto.cantidad}x {producto.producto}</span>
+                  <span>${(producto.cantidad * producto.precio).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-3">
+              <button className="p-2 text-blue-600 hover:text-blue-800">
+                <Edit size={16} />
+              </button>
+              <button className="p-2 text-red-600 hover:text-red-800">
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const InventarioScreen = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-800">Inventario</h1>
+          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2">
+            <Plus size={20} />
+            <span>Agregar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Lista de productos */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {inventario.map((item) => (
+          <div key={item.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-800">{item.producto}</h3>
+                <p className="text-sm text-gray-600">{item.categoria}</p>
+                <div className="flex items-center space-x-4 mt-2">
+                  <span className="text-sm text-gray-600">Stock: {item.stock}</span>
+                  <span className="text-sm font-medium text-green-600">${item.precio.toLocaleString()}</span>
+                </div>
+              </div>
+              
+              <div className="flex space-x-2">
+                <button className="p-2 text-blue-600 hover:text-blue-800">
+                  <Edit size={16} />
+                </button>
+                <button className="p-2 text-red-600 hover:text-red-800">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="mt-3 flex justify-between items-center">
+              <div className={`text-sm ${item.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                {item.stock < 10 ? 'Stock bajo' : 'Stock disponible'}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const ClientesScreen = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-800">Clientes</h1>
+          <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center space-x-2">
+            <Plus size={20} />
+            <span>Agregar</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Lista de clientes */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {clientes.map((cliente) => (
+          <div key={cliente.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                  <User size={20} className="text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800">{cliente.nombre}</h3>
+                  <p className="text-sm text-gray-600">{cliente.telefono}</p>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Última compra:</p>
+                <p className="text-sm font-medium">{cliente.ultimaCompra}</p>
+                <p className="text-xs text-gray-500">{cliente.totalCompras} compras</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-3">
+              <button className="p-2 text-blue-600 hover:text-blue-800">
+                <Edit size={16} />
+              </button>
+              <button className="p-2 text-green-600 hover:text-green-800">
+                <ShoppingCart size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const ReportesScreen = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white p-4 border-b border-gray-200">
+        <h1 className="text-xl font-bold text-gray-800">Reportes</h1>
+      </div>
+
+      {/* Métricas */}
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Ventas Hoy</p>
+                <p className="text-2xl font-bold text-green-600">$186,000</p>
+              </div>
+              <DollarSign size={24} className="text-green-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Pedidos Hoy</p>
+                <p className="text-2xl font-bold text-blue-600">12</p>
+              </div>
+              <ShoppingCart size={24} className="text-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-800">Productos más vendidos</h3>
+            <TrendingUp size={20} className="text-green-500" />
+          </div>
+          
+          <div className="space-y-3">
+            {[
+              { producto: 'Tomates almita', ventas: 45, ingresos: 247500 },
+              { producto: 'Papas', ventas: 32, ingresos: 102400 },
+              { producto: 'Cebollas', ventas: 28, ingresos: 78400 }
+            ].map((item, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-800">{item.producto}</p>
+                  <p className="text-sm text-gray-600">{item.ventas} unidades vendidas</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-green-600">${item.ingresos.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const BottomNavigator = () => {
+    const tabs = [
+      { id: 'tibo', label: 'Tibo', icon: Mic },
+      { id: 'pedidos', label: 'Pedidos', icon: ShoppingCart },
+      { id: 'inventario', label: 'Inventario', icon: Package },
+      { id: 'clientes', label: 'Clientes', icon: Users },
+      { id: 'reportes', label: 'Reportes', icon: BarChart3 },
+    ];
+
+    return (
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50 max-w-xl mx-auto">
+        <div className="flex justify-around items-center">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-colors ${
+                activeTab === id 
+                  ? 'text-green-600 bg-green-50' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Icon size={20} />
+              <span className="text-xs mt-1">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   // Inicializar grabación de audio al montar el componente
   useEffect(() => {
@@ -345,172 +799,32 @@ export default function TiboAIAssistant() {
     }
   };
 
+  const renderCurrentScreen = () => {
+    switch (activeTab) {
+      case 'tibo':
+        return <TiboScreen />;
+      case 'pedidos':
+        return <PedidosScreen />;
+      case 'inventario':
+        return <InventarioScreen />;
+      case 'clientes':
+        return <ClientesScreen />;
+      case 'reportes':
+        return <ReportesScreen />;
+      default:
+        return <TiboScreen />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen max-w-xl mx-auto bg-white relative">
-      {/* Header minimalista */}
-      <header className="p-4 flex justify-between items-center border-b border-gray-200">
-        <button className="p-1 text-gray-600 hover:text-gray-800">
-          <X size={24} />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-800">tibó v2</h1>
-        <div className="w-8"></div> {/* Spacer para centrar */}
-      </header>
-
-      {/* Área de conversación */}
-      <div className="flex-1 bg-gray-100 overflow-y-auto p-4 space-y-4">
-        {conversation.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Volume2 size={20} className="text-white" />
-            </div>
-            <p className="text-gray-600 text-sm">
-              Hola, soy el robot de tibó v2
-            </p>
-          </div>
-        )}
-
-        {conversation.map((message, index) => (
-          <div key={index}>
-            {/* Mensajes del usuario - muy discretos */}
-            {message.type === 'user' && (
-              <div className="text-right mb-2">
-                <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
-                  {message.content}
-                </span>
-              </div>
-            )}
-            
-            {/* Respuestas del robot - prominentes */}
-            {message.type === 'ai' && (
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <p className="text-gray-800 mb-3">{message.content}</p>
-                
-                {message.action && (
-                  <button 
-                    onClick={() => handleEditAction(message.action)}
-                    className="w-full p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-left"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        {message.action.type === 'nueva_venta' ? (
-                          <ShoppingCart size={16} className="text-green-600 mr-2" />
-                        ) : (
-                          <Package size={16} className="text-green-600 mr-2" />
-                        )}
-                        <span className="text-sm font-medium text-green-800">
-                          {message.action.type === 'nueva_venta' ? 'Nueva Venta' : 'Ingresar Mercadería'}
-                        </span>
-                      </div>
-                      <ChevronRight size={16} className="text-green-600" />
-                    </div>
-                    
-                    {message.action.type === 'nueva_venta' && (
-                      <div className="text-sm text-gray-600">
-                        {message.action.data.productos.map((p, i) => (
-                          <div key={i}>{p.cantidad}x {p.producto}</div>
-                        ))}
-                      </div>
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
-            
-            {/* Mensajes del sistema */}
-            {message.type === 'system' && (
-              <div className="text-center">
-                <span className="text-sm text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
-                  {message.content}
-                </span>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {isProcessing && (
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Loader2 size={16} className="animate-spin text-green-500" />
-              <span className="text-gray-600">El robot está pensando...</span>
-            </div>
-          </div>
-        )}
+      {/* Contenido principal */}
+      <div className="flex-1 overflow-hidden pb-16">
+        {renderCurrentScreen()}
       </div>
 
-      {/* Executing State */}
-      {isExecuting && (
-        <div className="p-3 bg-green-50 border-t border-green-200">
-          <div className="flex items-center justify-center space-x-2">
-            <Loader2 size={16} className="animate-spin text-green-500" />
-            <span className="text-sm text-green-700">Ejecutando...</span>
-          </div>
-        </div>
-      )}
-
-      {/* Controles minimalistas */}
-      <div className="p-4 bg-white border-t border-gray-200">
-        {/* Input de texto (solo cuando está activo) */}
-        {showTextInput && (
-          <div className="mb-3 flex items-center space-x-2">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Escribí tu mensaje..."
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              disabled={isProcessing || isExecuting}
-              autoFocus
-            />
-            <button
-              onClick={() => handleSendMessage()}
-              disabled={!inputText.trim() || isProcessing || isExecuting}
-              className="p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={20} />
-            </button>
-          </div>
-        )}
-        
-        {/* Botones principales */}
-        <div className="flex items-center justify-center space-x-4">
-          {/* Botón de voz prominente */}
-          <button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onMouseLeave={stopRecording}
-            disabled={isProcessing || isExecuting || !isRecordingSupported}
-            className={`w-16 h-16 rounded-full transition-all duration-200 flex items-center justify-center ${
-              isListening 
-                ? 'bg-red-500 text-white scale-110' 
-                : 'bg-green-500 text-white hover:bg-green-600 shadow-lg'
-            } disabled:opacity-50`}
-            title={!isRecordingSupported ? 'Grabación de audio no soportada' : 'Mantené presionado para grabar'}
-          >
-            {isListening ? (
-              <div className="relative">
-                <MicOff size={28} />
-                <div className="absolute inset-0 animate-pulse bg-red-300 rounded-full opacity-50"></div>
-              </div>
-            ) : (
-              <Mic size={28} />
-            )}
-          </button>
-
-          {/* Botón de chat secundario */}
-          <button
-            onClick={() => setShowTextInput(!showTextInput)}
-            disabled={isProcessing || isExecuting}
-            className={`px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-              showTextInput 
-                ? 'bg-green-500 text-white border-green-500' 
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            Chat
-          </button>
-        </div>
-      </div>
+      {/* Bottom Navigator */}
+      <BottomNavigator />
 
       {/* Bottom Sheet para editar venta */}
       {showBottomSheet && editingVenta && (
